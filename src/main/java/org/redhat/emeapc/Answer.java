@@ -2,8 +2,11 @@ package org.redhat.emeapc;
 
 import java.util.Objects;
 
+import org.hibernate.validator.constraints.Length;
+
 public class Answer {
 
+	@Length(min = 5, message = "The name must be at least 5 characters long")
 	private String name;
 
 	private String description;
