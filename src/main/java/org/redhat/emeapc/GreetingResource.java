@@ -8,9 +8,11 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.inject.Inject;
+import javax.transaction.UserTransaction;
 import javax.validation.Validator;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
@@ -36,6 +38,42 @@ public class GreetingResource {
 
     @Inject
     AgroalDataSource defaultDataSource;
+
+    @Inject 
+    UserTransaction transaction;
+
+    
+    @GET
+    @Path("/country/{name}")
+    public String getCountry(@PathParam("name") String name) throws SQLException {
+        Country c = Country.findByName(name);
+        if ( c == null ) {
+            LOGGER.warning("No country " + name + " found in local database. Invoking remote service...");
+            c = lookupAndAddMissingCountry(name);
+            LOGGER.warning("... Query result:" + c);
+        }
+        return c.getAlpha2Code().toLowerCase();
+    }
+
+    private Country lookupAndAddMissingCountry(String name) {
+    	final Country c = invokedRemoteService(name);
+    	LOGGER.warning("... Query result:" + c);
+    	if ( c != null ) {
+    		LOGGER.warning(c.getAlpha2Code() + ":" + c.getName());
+            try {
+                transaction.begin();
+	    		c.persist();
+	            transaction.commit();
+	        }
+	        catch(Exception e) {
+	        	throw new IllegalStateException(e);
+	        }
+    		LOGGER.warning("Saved under id:" + c.id);
+    		LOGGER.warning("Persistent:" + c.isPersistent());
+    	} else
+    		new IllegalArgumentException("No such country:" + name);
+    	return c;
+    }
 
     @GET
     @Path("/dscheck")

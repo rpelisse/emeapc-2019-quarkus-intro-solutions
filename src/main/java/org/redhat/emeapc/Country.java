@@ -30,4 +30,8 @@ public class Country extends PanacheEntity {
 	public void setAlpha2Code(String alpha2Code) {
 		this.alpha2Code = alpha2Code;
 	}
+
+	public static Country findByName(String name) {
+		return find("name", name).firstResult();
+	}
 }
