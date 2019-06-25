@@ -1,5 +1,8 @@
 package org.redhat.emeapc;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +19,8 @@ import javax.ws.rs.core.MediaType;
 
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+import io.agroal.api.AgroalDataSource;
+
 @Path("/quarkus")
 @Produces(MediaType.APPLICATION_JSON)
 public class GreetingResource {
@@ -27,22 +32,24 @@ public class GreetingResource {
     @Inject
     @RestClient
     CountriesService countriesService;
-    
+
     @Inject
     Validator validator;
 
+    @Inject
+    AgroalDataSource defaultDataSource;
+
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Collection<Country> cachedCountries() {
-        LOGGER.warning("cachedCountries() was invoked.");        
-        return cacheCountries.values();
+    @Path("/dscheck")
+    public String checkDS() throws SQLException {
+    	return defaultDataSource.toString();
     }
-    
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/country/{countryName}")
     public Country retrieveCountryByName(@PathParam("countryName") String countryName ) {
-        LOGGER.warning("retrieveCountryByName was invoked.");        
+        LOGGER.warning("retrieveCountryByName was invoked.");
     	return cacheCountries.containsKey(countryName) ? cacheCountries.get(countryName) : invokedRemoteService(countryName);
     }
 
@@ -52,7 +59,7 @@ public class GreetingResource {
 			throw new IllegalArgumentException("No such country :" + countryName);
 		return cacheCountry(countryName, res.iterator().next());
 	}
-	
+
 	private Country cacheCountry(String countryName, Country country) {
 		cacheCountries.put(countryName, country);
 		return country;
