@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.transaction.UserTransaction;
 import javax.validation.Validator;
@@ -45,6 +46,7 @@ public class GreetingResource {
     
     @GET
     @Path("/country/{name}")
+    @RolesAllowed("user")
     public String getCountry(@PathParam("name") String name) throws SQLException {
         Country c = Country.findByName(name);
         if ( c == null ) {
@@ -77,6 +79,7 @@ public class GreetingResource {
 
     @GET
     @Path("/dscheck")
+    @RolesAllowed("admin")
     public String checkDS() throws SQLException {
 		List<Country> countries = Country.listAll(Sort.by("name"));
 		LOGGER.warning("FOUND:" + countries.size());
