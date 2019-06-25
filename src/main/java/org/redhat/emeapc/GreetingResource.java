@@ -1,10 +1,8 @@
 package org.redhat.emeapc;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -13,13 +11,13 @@ import javax.inject.Inject;
 import javax.validation.Validator;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import io.agroal.api.AgroalDataSource;
+import io.quarkus.panache.common.Sort;
 
 @Path("/quarkus")
 @Produces(MediaType.APPLICATION_JSON)
@@ -42,15 +40,13 @@ public class GreetingResource {
     @GET
     @Path("/dscheck")
     public String checkDS() throws SQLException {
-    	return defaultDataSource.toString();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/country/{countryName}")
-    public Country retrieveCountryByName(@PathParam("countryName") String countryName ) {
-        LOGGER.warning("retrieveCountryByName was invoked.");
-    	return cacheCountries.containsKey(countryName) ? cacheCountries.get(countryName) : invokedRemoteService(countryName);
+		List<Country> countries = Country.listAll(Sort.by("name"));
+		LOGGER.warning("FOUND:" + countries.size());
+		String result = "[";
+		for ( Country c : countries )
+			result += c.getAlpha2Code() + ",";
+		result += "]";
+		return result.replaceAll("\\,\\]", "]");
     }
 
 	private Country invokedRemoteService(String countryName) {
